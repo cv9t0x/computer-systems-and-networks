@@ -4,7 +4,7 @@ data = []
 
 with open("data.txt") as f:
     while True:
-        line = f.readline()[:-1]
+        line = f.readline()
 
         if line == "":
             break
