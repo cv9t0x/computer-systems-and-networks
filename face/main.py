@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, shutil
 from PIL import Image
 
 
@@ -7,13 +7,13 @@ def openFile(path):
 		return f.read()
 
 
-def getFacesFromImage(data):
-	API_URL = "https://bki-face.cognitiveservices.azure.com/face/v1.0/detect?returnFaceId=true"
+def fetchFacesCoordinates(data):
+	API_URL = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true"
 	API_KEY = "01f0026ec4bc4880b6b8713dbd581e97"
 
 	headers = {
 		"Content-Type": "application/octet-stream",
-		"Ocp-Apim-Subscription-Key": API_KEY
+		"Ocp-Apim-Subscription-Key": API_KEY,
 	}
 
 	try:
@@ -24,31 +24,35 @@ def getFacesFromImage(data):
 
 
 def cropImage(image, data):
-	outputpath = "faces/"
-	count = 0
+	outputpath = "./faces"
+	cleanDir(outputpath)
 
+	count = 0
+	
 	for item in data:
 		coordinate = item["faceRectangle"]
-		coordinates = {
-			top: int(coordinate["top"]),
-			left: int(coordinate["left"]),
-			width: int(coordinate["width"]) + int(coordinate["top"]),
-			height: int(coordinate["height"]) + int(coordinate["left"])
-		}
+		top = coordinate["top"]
+		left = coordinate["left"]
+		width = coordinate["width"]
+		height = coordinate["height"]
 
-		croppedImage = image.crop(coordinates.left, coordinates.top, coordinates.width, coordinates.height)
-		croppedImage.save(outputpath + str(++count) + ".jpg")
+		croppedImage = image.crop((left, top, width + left, height + top))
+		croppedImage.save(outputpath + "/" + str(count) + ".jpg")
+		count += 1
 
+
+def cleanDir(path):
+	shutil.rmtree(path, ignore_errors=True)
+	os.mkdir(path)
 
 def main():
-	imagename = "img.jpg"
-	path = "./" + imagename
+	imagepath = "img.jpg"
+	response = fetchFacesCoordinates(openFile(imagepath))
 
-	data = openFile(path)
-	response = getFacesFromImage(data)
+	print(response)
 
 	if(response):
-		cropImage(Image.open(imagename), response)
+		cropImage(Image.open(imagepath), response)
 
 
 if __name__ == "__main__":
